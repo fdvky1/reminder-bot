@@ -51,7 +51,7 @@ const connectToWhatsApp = async(id = "main", retryCount = 0) => {
         if(ev["creds.update"]) await saveCreds();
         if(ev["contacts.upsert"]){
             const contacts = ev["contacts.upsert"];
-            mongoClient.db("contacts").collection("contacts").insertMany(contacts.filter(v => v.id.endsWith("@s.whatsapp.net")).map(v => {
+            mongoClient.db("contacts").collection(`session-${id}`).insertMany(contacts.filter(v => v.id.endsWith("@s.whatsapp.net")).map(v => {
                 return {
                     jid: jidNormalizedUser(v.id)
                 }
@@ -65,6 +65,7 @@ const connectToWhatsApp = async(id = "main", retryCount = 0) => {
                 if (statusCode === DisconnectReason.loggedOut){
                     // fs.rmdirSync("./sessions/auth_info_baileys", { recursive: true })
                     // process.exit()
+                    mongoClient.db("contacts").collection(`session-${id}`).drop();
                     state.remove();
                 }else if(retryCount <= process.env.MAX_RETRIES){
                     connectToWhatsApp(id, ++retryCount)
@@ -81,7 +82,7 @@ const connectToWhatsApp = async(id = "main", retryCount = 0) => {
             console.log("Uploading...")
             const now = new Date();
             const diff = (Math.floor((now.getTime() - start.getTime())/(1000*60*60*24))) + 1;
-            const [image, contacts] = await Promise.all([generateMeme("./assets/images/mr_crab.jpg", "SEMANGAT PUASA HARI " + (days[diff]?.toUpperCase() || "KE-" + diff), "YAA.... HARI " + (days[diff]?.toUpperCase() || "KE-" + diff)), mongoClient.db("contacts").collection("contacts").find().toArray()])
+            const [image, contacts] = await Promise.all([generateMeme("./assets/images/mr_crab.jpg", "SEMANGAT PUASA HARI " + (days[diff]?.toUpperCase() || "KE-" + diff), "YAA.... HARI " + (days[diff]?.toUpperCase() || "KE-" + diff)), mongoClient.db("contacts").collection(`session-${id}`).find().toArray()])
             await sock.sendMessage("status@broadcast", {
                 image,
                 caption: "Gambar ini diunggah secara otomatis menggunakan https://github.com/fdvky1/reminder-bot"

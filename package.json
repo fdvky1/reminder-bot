@@ -1,0 +1,23 @@
+{
+  "name": "reminder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@whiskeysockets/baileys": "github:WhiskeySockets/Baileys",
+    "baileys-bottle": "^2.1.2",
+    "canvas": "^2.11.2",
+    "dotenv": "^16.4.5",
+    "mongodb": "^3.7.4",
+    "node-cron": "^3.0.3",
+    "pino-pretty": "^10.3.1",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

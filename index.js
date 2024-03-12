@@ -110,7 +110,7 @@ cron.schedule(process.env.CRON, async () => {
         console.log("Uploading...")
         const now = new Date();
         const diff = (Math.floor((now.getTime() - start.getTime())/(1000*60*60*24))) + 1;
-        const image = generateMeme("./assets/images/mr_crab.jpg", "SEMANGAT PUASA HARI " + (days[diff]?.toUpperCase() || "KE-" + diff), "YAA.... HARI " + (days[diff]?.toUpperCase() || "KE-" + diff));
+        const image = await generateMeme("./assets/images/mr_crab.jpg", "SEMANGAT PUASA HARI " + (days[diff]?.toUpperCase() || "KE-" + diff), "YAA.... HARI " + (days[diff]?.toUpperCase() || "KE-" + diff));
         const promises = [];
         for(let [id, sock] of WAConn){
             promises.push((async () => {

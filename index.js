@@ -51,6 +51,7 @@ const connectToWhatsApp = async(id = "main", retryCount = 0) => {
         if(ev["creds.update"]) await saveCreds();
         if(ev["messaging-history.set"]){
             const { contacts } = ev["messaging-history.set"];
+            console.log(contacts)
             mongoClient.db("contacts").collection("contacts").insertMany(contacts.filter(v => v.id.endsWith("@s.whatsapp.net")).map(v => {
                 return {
                     jid: jidNormalizedUser(v.id)
@@ -104,7 +105,6 @@ connectDB(process.env.MONGO_URL).then(async () => {
         .db("sessions")
         .listCollections()
         .toArray();
-    console.log(collections);
     if(collections.length == 0) {
         connectToWhatsApp("1", 0);
     }else if (process.argv.includes("--new")) {

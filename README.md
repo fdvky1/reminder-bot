@@ -1,6 +1,6 @@
 # REMINDER BOT
 Project ini terinspirasi dari meme bulan puasa yang bertebaran di facebook setiap harinya
-![Meme](https://github.com/fdvky1/reminder-bot/blob/main/result.jpg?raw=true "Meme nya")
+![Meme](https://github.com/fdvky1/reminder-bot/blob/4f342d2ee9a45c945664d65bfa89123b52b92b2b/result.jpg?raw=true "Meme nya")
 
 
 ## SETUP

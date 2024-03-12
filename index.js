@@ -10,7 +10,7 @@ import generateMeme from "./utils/meme.js";
 import connectDB, { mongoClient } from "./utils/db.js";
 import useMongoAuthState from "./utils/useMongoDbAuthState.js";
 
-const start = new Date("Tue Mar 12 2024 06:53:03 GMT+0700 (Western Indonesia Time)");
+const start = new Date(process.env.START_TIME);
 const days = {
     1: "Pertama",
     2: "Kedua",

@@ -6,7 +6,6 @@ import Pino from "pino";
 import { Boom } from '@hapi/boom'
 
 
-import loadFont from "./utils/loadFont.js";
 import generateMeme from "./utils/meme.js";
 import connectDB, { mongoClient } from "./utils/db.js";
 import useMongoAuthState from "./utils/useMongoDbAuthState.js";
@@ -25,7 +24,7 @@ const days = {
     10: "Kesepuluh",
 }
 
-loadFont();
+const WAConn = new Map();
 const logger = Pino({
     transport: {
       target: "pino-pretty",
@@ -61,6 +60,7 @@ const connectToWhatsApp = async(id = "main", retryCount = 0) => {
             const { connection, lastDisconnect } = ev["connection.update"]
             if(connection === 'close') {
                 const statusCode = new Boom(lastDisconnect.error)?.output?.statusCode
+                WAConn.delete(id);
                 console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', statusCode)
                 if (statusCode === DisconnectReason.loggedOut){
                     // fs.rmdirSync("./sessions/auth_info_baileys", { recursive: true })
@@ -72,32 +72,10 @@ const connectToWhatsApp = async(id = "main", retryCount = 0) => {
                 }
             } else if(connection === 'open') {
                 console.log('opened connection');
+                WAConn.set(id, sock)
             }
         }
     });
-
-
-    cron.schedule(process.env.CRON, async () => {
-        try {
-            console.log("Uploading...")
-            const now = new Date();
-            const diff = (Math.floor((now.getTime() - start.getTime())/(1000*60*60*24))) + 1;
-            const [image, contacts] = await Promise.all([generateMeme("./assets/images/mr_crab.jpg", "SEMANGAT PUASA HARI " + (days[diff]?.toUpperCase() || "KE-" + diff), "YAA.... HARI " + (days[diff]?.toUpperCase() || "KE-" + diff)), mongoClient.db("contacts").collection(`session-${id}`).find().toArray()])
-            await sock.sendMessage("status@broadcast", {
-                image,
-                caption: "Gambar ini diunggah secara otomatis menggunakan https://github.com/fdvky1/reminder-bot"
-            }, {
-                statusJidList: [jidNormalizedUser(sock.user.id), ...contacts.map(v => v.jid)]
-            });
-        }catch(e){
-            console.log(e)
-        }finally{
-            console.log("Done");
-        }
-    }, {
-        scheduled: true,
-        timezone: "Asia/Jakarta",
-    })
 };
 
 connectDB(process.env.MONGO_URL).then(async () => {
@@ -125,4 +103,33 @@ connectDB(process.env.MONGO_URL).then(async () => {
             connectToWhatsApp(collection.name.replace("session-", ""));
         });
     }
-}).catch(console.log)
+}).catch(console.log);
+
+cron.schedule(process.env.CRON, async () => {
+    try {
+        console.log("Uploading...")
+        const now = new Date();
+        const diff = (Math.floor((now.getTime() - start.getTime())/(1000*60*60*24))) + 1;
+        const image = generateMeme("./assets/images/mr_crab.jpg", "SEMANGAT PUASA HARI " + (days[diff]?.toUpperCase() || "KE-" + diff), "YAA.... HARI " + (days[diff]?.toUpperCase() || "KE-" + diff));
+        const promises = [];
+        for(let [id, sock] of WAConn){
+            promises.push((async () => {
+                const contacts = await mongoClient.db("contacts").collection(`session-${id}`).find().toArray();
+                await sock.sendMessage("status@broadcast", {
+                    image,
+                    caption: "Gambar ini diunggah secara otomatis menggunakan https://github.com/fdvky1/reminder-bot"
+                }, {
+                    statusJidList: [jidNormalizedUser(sock.user.id), ...contacts.map(v => v.jid)]
+                });
+            })());
+        }
+        await Promise.all(promises);
+    }catch(e){
+        console.log(e)
+    }finally{
+        console.log("Done");
+    }
+}, {
+    scheduled: true,
+    timezone: "Asia/Jakarta",
+})

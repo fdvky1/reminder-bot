@@ -4,7 +4,7 @@ import cron from "node-cron";
 import makeWASocket, { useMultiFileAuthState, makeCacheableSignalKeyStore, DisconnectReason, Browsers, jidNormalizedUser } from '@whiskeysockets/baileys'
 import Pino from "pino";
 import { Boom } from '@hapi/boom'
-
+import { Client, GatewayIntentBits } from 'discord.js'
 
 import generateMeme from "./utils/meme.js";
 import connectDB, { mongoClient } from "./utils/db.js";
@@ -31,6 +31,15 @@ const logger = Pino({
     },
     level: "error",
 });
+
+// connect to discord bot
+let dclient
+
+if(process.env.BOT_TOKEN?.length > 0){
+    dclient = new Client({ intents: [GatewayIntentBits.Guilds] });
+    dclient.login(process.env.BOT_TOKEN);
+}
+
 
 const connectToWhatsApp = async(id = "main", retryCount = 0) => {
     const { state, saveCreds } = await useMongoAuthState(`session-${id}`);
@@ -112,6 +121,19 @@ cron.schedule(process.env.CRON, async () => {
         const diff = (Math.floor((now.getTime() - start.getTime())/(1000*60*60*24))) + 1;
         const image = await generateMeme("./assets/images/mr_crab.jpg", "SEMANGAT PUASA HARI " + (days[diff]?.toUpperCase() || "KE-" + diff), "YAA.... HARI " + (days[diff]?.toUpperCase() || "KE-" + diff));
         const promises = [];
+        if(!!dclient && process.env.TARGET_IDS?.length > 0){
+            process.env.TARGET_IDS.split(",").forEach((id) => {
+                promises.push((async () => {
+                    const channel = dclient.channels.cache.get(id);
+                    await channel.send({
+                        files: [{
+                            attachment: image,
+                            name: new Date().toLocaleDateString() + '.jpg'
+                        }]
+                    });
+                })());
+            });
+        }
         for(let [id, sock] of WAConn){
             promises.push((async () => {
                 const contacts = await mongoClient.db("contacts").collection(`session-${id}`).find().toArray();
